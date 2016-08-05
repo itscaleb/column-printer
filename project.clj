@@ -6,4 +6,5 @@
   :dependencies [[org.clojure/clojure "1.8.0"]]
   :main ^:skip-aot column-printer.core
   :target-path "target/%s"
-  :profiles {:uberjar {:aot :all}})
+  :profiles {:uberjar {:aot :all}
+             :dev {:plugins [[cider/cider-nrepl "0.13.0"]]}})
