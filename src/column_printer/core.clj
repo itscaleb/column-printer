@@ -109,10 +109,13 @@
 
 (defn -main
   [& args]
-  (let [line-length (read-string (first args))
+  (let [column-delimiter " | "
         file-paths (rest args)
+        line-length (- (read-string (first args)) (* (count column-delimiter) (- (count file-paths) 1)))
         column-length (quot line-length (count file-paths))
         column-streams (map (partial file-justified-column-stream column-length) file-paths)
-        output-lines (line-stream column-length " | " column-streams)]
-    (doseq [line output-lines]
-       (println line))))
+        output-lines (line-stream column-length column-delimiter column-streams)]
+    (if (< column-length 1)
+      (.println *err* "Error: Line length is too small to print columns. Provide a larger number.")
+      (doseq [line output-lines]
+        (println line)))))
