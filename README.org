@@ -1,0 +1,77 @@
+* Column Printer
+
+  This program prints N plain text files into their own columns of a specified width.
+
+** Caveats
+
+   + This is my first foray into Clojure, and my only experience in lisp in through /SICP/ and /The Little Schemer/ books, so it is probably somewhat naive.
+
+   + Using lein seemed like a good way to get started in clojure.  I used it to generate the project.
+
+   + All the code is within the core.clj file, and all the tests are in core_test.clj. I thought about breaking library functions into other namespaces, but the program ended up being small and decided it wasn't needed.
+
+   + I rolled my own text justification. For the sake of time I just evenly distributed spaces between the words, but it seems like there's better algorithms out there. 
+
+** Design Discussion
+
+   This exercise seemed like a good chance to play around with lazy sequences, a.k.a. streams.
+
+   Plain text files can be very large, so reading in the entire content of each file can take a large amount of memory.
+
+   We can instead leverage lazy sequences to read each line from each file only as needed for processing.
+
+*** Design Choices
+
+**** Lazy Sequences
+     Because of the advantages noted above, I chose to represent almost all data as lazy sequences.
+
+     The basic approach looks like this:
+
+     (Each rectangle is a lazy sequence, and each arrow is a transformation applied to it, creating a new lazy sequence.)
+
+     #+BEGIN_SRC ditaa
+
+      +-------------------+    +-------+    +---------+    +-------------------+    +---------------------------------------+
+      | Lines (from file) |--> | Words |--> | Columns |--> | Justified Columns |--> | Complete Lines (formatted for output) |
+      +-------------------+    +-------+    +---------+    +-------------------+    +---------------------------------------+
+
+     #+END_SRC
+
+     As fully process lines are requested from the /Complete Lines/ sequence, it lazily prompts all the transformations to be applied from the bottom.
+
+**** I/O
+     Since we're only processing a line at a time, I'm also calling println for each line. All the IO calls might cause a performance bottleneck.
+     If it became a problem, we could print lines in batches. That would be pretty simple to do by calling "take N" on the output stream and then calling println once for N lines.
+
+*** Difficulties I Encountered
+
+    The final processed lines for output are represented as one stream that is composed of N number of column streams. One difficulty that arose is that the line stream can't finish until all of the column streams are empty.
+    To solve this, there is some code in the 'line-stream' function (the helper functions "first-or-line" and "rest-or-empty") that forces empty column streams to continue outputting blank lines until all column streams are empty.
+
+    I'm also embarrased to admit how long it took me to add spaces to a column until it reached the desired length to justify it.
+    I ended up creating two lists. One of the words in the column, the other a sequence of spaces of the correct length to place between the words. Then I interleaved those two lists together. It works, but I have a feeling that I made it harder than it needed to be.
+
+*** Other Thoughts
+
+    I think the lazy sequence approach worked really well for this exercise. It made it simple to divide each subproblem into a discrete function, and compose them together to do something meaningful.
+
+    The 'comp' and 'partial' functions are really neat. It made it easy to compose the discrete functions together using partial application.
+
+    Emacs + Clojure + Paredit + Cider is fantastic. It was such a nice experience coding this up.
+
+** Usage
+   #+BEGIN_SRC 
+   $ lein run <line length> <file1> <file2> ... <fileN>
+   #+END_SRC
+
+   The program will take the given line length, and divide it evenly into N columns, one column per file.
+
+** Examples
+
+   NOTE: For your convenience I included five text files containing portions of books from Project Gutenberg. So the following command will work.
+
+   Output 5 files into 5 evenly spaced columns across a line of 120 characters
+
+   #+BEGIN_SRC
+   $ lein run 120 ./file1.txt ./file2.txt ./file3.txt ./file4.txt ./file5.txt
+   #+END_SRC
