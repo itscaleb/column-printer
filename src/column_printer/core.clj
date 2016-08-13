@@ -90,8 +90,8 @@
       (stream-file (line-seq (io/reader filepath))))))
 
 (defn line-stream
-  "Takes a collection of column streams and combines them into a stream of lines separated by a delimeter"
-  [column-length delimeter column-streams]
+  "Takes a collection of column streams and combines them into a stream of lines separated by a delimiter"
+  [column-length delimiter column-streams]
   (let [default-line (apply str (repeat column-length " "))]
     (letfn [(first-or-line
               [lst]
@@ -101,10 +101,10 @@
               (if (empty? lst) '() (rest lst)))]
       (if (every? empty? column-streams) ; if true, the line stream is empty.
         '()
-        (lazy-seq (cons (str/join delimeter
+        (lazy-seq (cons (str/join delimiter
                                   (map first-or-line column-streams))
                         (line-stream column-length
-                                     delimeter
+                                     delimiter
                                      (map rest-or-empty column-streams))))))))
 
 (defn -main
